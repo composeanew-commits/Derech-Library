@@ -37,12 +37,15 @@ h2{margin:6px 2px 10px;font-size:20px}.empty{text-align:center;color:var(--mut);
 <div id="toast"></div>
 <script src="books.js"></script><script src="config.js"></script>
 <script>
-const B=window.BOOKS,API=window.API_URL,$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let B=LS0(),API=window.API_URL,$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function LS0(){try{const v=JSON.parse(localStorage.getItem("books"));if(v&&v.length)return v}catch(e){}return window.BOOKS}
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DAY=864e5,fmt=t=>new Date(t).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
 let tok=LS.get("tok",null);if(!tok){tok=Math.random().toString(36).slice(2)+Date.now().toString(36);LS.set("tok",tok)}
 let out=new Set(),mineL=[],cat="All",onlyAvail=false,adminPin="",adminData=null,busy=false;
-const cats=["All",...new Set(B.map(b=>b.c))];
+let cats=[];const mkCats=()=>{cats=["All",...new Set(B.map(b=>b.c))]};mkCats();
+let nb={t:"",a:"",c:"",syn:"",img:""};
+async function loadBooks(){if(!API)return;try{const r=await api({action:"books"});if(r.books&&r.books.length){B=r.books;LS.set("books",B);mkCats();if(!cats.includes(cat))cat="All";render()}}catch(e){}}
 function toast(m){const t=$("toast");t.textContent=m;t.className="show";clearTimeout(toast.h);toast.h=setTimeout(()=>t.className="",2600)}
 async function api(p){
  if(!API){const L=LS.get("demo",[]),b=p.book;
@@ -83,7 +86,11 @@ function mine(){return`<h2>My books</h2>`+(mineL.length?mineL.map(m=>{const b=B.
 function waLink(l){let p=String(l.phone||"").replace(/\D/g,"");if(p.startsWith("0"))p="972"+p.slice(1);if(!p)return"";return"https://wa.me/"+p+"?text="+encodeURIComponent(`Hi ${l.name}, a friendly reminder from the Derech library: "${l.title}" is due back ${fmt(l.due)}. Thanks!`)}
 function admin(){if(!adminData)return`<h2>Admin</h2><div class="card"><input class="f" id="pin" type="password" inputmode="numeric" placeholder="Admin PIN"><button class="btn" data-do="login">Open</button></div>`;
  const L=[...adminData].sort((a,b)=>a.due-b.due),od=L.filter(l=>l.due<Date.now()).length;
- return`<h2>Checked out (${L.length}${od?`, <span class="late">${od} overdue</span>`:""})</h2>`+(L.map(l=>{const w=waLink(l);return`<div class="card"><div class="t">${esc(l.title)}</div><div>${esc(l.name)} · ${esc(l.phone||"no phone")}</div><div class="a ${l.due<Date.now()?"late":""}">${l.due<Date.now()?"OVERDUE · ":""}due ${fmt(l.due)}</div>${w?`<a class="btn wa" target="_blank" rel="noopener" href="${w}">💬 WhatsApp reminder</a>`:""}<button class="btn sec" data-ar="${esc(l.book)}">Mark returned</button></div>`}).join("")||'<div class="empty">Nothing is out</div>')+`<a class="btn" href="#labels">🏷 Print QR labels</a>`}
+ return`<h2>Checked out (${L.length}${od?`, <span class="late">${od} overdue</span>`:""})</h2>`+(L.map(l=>{const w=waLink(l);return`<div class="card"><div class="t">${esc(l.title)}</div><div>${esc(l.name)} · ${esc(l.phone||"no phone")}</div><div class="a ${l.due<Date.now()?"late":""}">${l.due<Date.now()?"OVERDUE · ":""}due ${fmt(l.due)}</div>${w?`<a class="btn wa" target="_blank" rel="noopener" href="${w}">💬 WhatsApp reminder</a>`:""}<button class="btn sec" data-ar="${esc(l.book)}">Mark returned</button></div>`}).join("")||'<div class="empty">Nothing is out</div>')+`<a class="btn" href="#labels">🏷 Print QR labels</a>
+ <h2>Add a book</h2><div class="card"><input class="f" id="nt" placeholder="Title" value="${esc(nb.t)}"><input class="f" id="na" placeholder="Author (optional)" value="${esc(nb.a)}"><button class="btn sec" data-do="lookup">🔍 Look up details & cover</button>
+ <input class="f" id="nc" list="cl" placeholder="Category" value="${esc(nb.c)}"><datalist id="cl">${cats.slice(1).map(c=>`<option value="${esc(c)}">`).join("")}</datalist>
+ <textarea class="f" id="ns" rows="4" placeholder="Synopsis">${esc(nb.syn)}</textarea>${nb.img?`<div style="margin:6px 0"><img src="${esc(nb.img)}" alt="" style="height:90px;border-radius:6px"></div>`:""}${nb.warn?`<div class="late">⚠ Marked mature by Google Books. It will be saved hidden from students.</div>`:""}
+ <button class="btn" data-do="addbook">➕ Save to library</button></div>`}
 const qr=u=>{const q=qrcode(0,"M");q.addData(u);q.make();return q.createSvgTag(3,0)};
 function labels(){const base=location.href.split("#")[0];return`<div class="noprint"><button class="btn" onclick="print()">🖨 Print / save as PDF</button><a class="btn sec" href="#admin">← Back</a></div><div class="labels"><div class="lb"><b>DERECH LIBRARY</b><br>Scan to take a book out${qr(base)}</div>`+B.map(b=>`<div class="lb">${qr(base+"#"+b.id)}<br>${esc(b.t)}<br>${b.id}</div>`).join("")+"</div>"}
 document.addEventListener("click",async e=>{const t=e.target.closest("[data-b],[data-c],#av,[data-do],[data-ar],nav a");if(!t)return;
@@ -94,7 +101,16 @@ document.addEventListener("click",async e=>{const t=e.target.closest("[data-b],[
  else if(t.dataset.ar){if(confirm("Mark returned?")){await api({action:"adminreturn",pin:adminPin,book:t.dataset.ar});await loadAdmin();refresh()}}
  else if(t.dataset.do){if(busy)return;busy=true;t.disabled=true;try{await act(t.dataset.do)}catch(x){toast("Something went wrong, try again")}busy=false;render()}});
 async function loadAdmin(){const r=await api({action:"admin",pin:adminPin});if(r.error){adminData=null;toast(r.error)}else adminData=r.loans}
-async function act(d){const id=route();const b=B.find(x=>x.id===id);
+function readNb(){nb.t=$("nt").value.trim();nb.a=$("na").value.trim();nb.c=$("nc").value.trim();nb.syn=$("ns").value.trim()}
+async function act(d){const id=route();
+ if(d==="lookup"){readNb();if(!nb.t)return toast("Enter a title first");
+  const q="intitle:"+nb.t+(nb.a?"+inauthor:"+nb.a:"");const r=await(await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=1&q="+encodeURIComponent(q).replace(/%2B/g,"+"))).json();
+  const v=r.items&&r.items[0]&&r.items[0].volumeInfo;if(!v)return toast("Nothing found, fill it in by hand");
+  nb.t=v.title||nb.t;if(!nb.a)nb.a=(v.authors||[]).join(", ");nb.syn=(v.description||nb.syn||"").replace(/<[^>]+>/g,"").slice(0,500);
+  nb.img=v.imageLinks?(v.imageLinks.thumbnail||"").replace("http:","https:"):"";nb.warn=v.maturityRating==="MATURE";if(!nb.c&&v.categories)nb.c=v.categories[0];toast("Found it. Check and save.");return}
+ if(d==="addbook"){readNb();if(!nb.t)return toast("Enter a title");
+  const r=await api({action:"addbook",pin:adminPin,t:nb.t,a:nb.a,c:nb.c,syn:nb.syn,img:nb.img,status:nb.warn?"hidden":""});if(r.error)return toast(r.error);
+  toast("Saved as "+r.id);nb={t:"",a:"",c:"",syn:"",img:""};await loadBooks();return}const b=B.find(x=>x.id===id);
  if(d==="login"){adminPin=$("pin").value;await loadAdmin();return}
  if(d==="take"){const name=$("nm").value.trim(),phone=$("ph").value.trim();if(!name)return toast("Please enter your name");
   const r=await api({action:"take",book:id,title:b.t,name,phone,token:tok});if(r.error)return toast(r.error);LS.set("me",{name,phone});toast("Taken! Due in 7 days 📖");await refresh();location.hash="mine"}
@@ -102,5 +118,5 @@ async function act(d){const id=route();const b=B.find(x=>x.id===id);
  if(d==="extend"){const r=await api({action:"extend",book:id,token:tok});if(r.error)return toast(r.error);toast("Extended one week");await refresh()}}
 $("q").addEventListener("input",()=>{if(route()!==""&&!route().startsWith("b-"))return;if(route().startsWith("b-"))location.hash="";render();$("q").focus()});
 addEventListener("hashchange",()=>{if(route()==="admin"&&adminPin&&!adminData)loadAdmin().then(render);else if(route()==="admin"&&adminPin)loadAdmin().then(render);render()});
-render();refresh();setInterval(()=>{if(!busy&&document.visibilityState==="visible")refresh()},30000);
+render();loadBooks();refresh();setInterval(()=>{if(!busy&&document.visibilityState==="visible")refresh()},30000);
 </script></body></html>
