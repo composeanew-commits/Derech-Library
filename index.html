@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Derech Library</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#362d6e"><link rel="icon" href="logo.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--bg:#f4f3fa;--card:#fff;--tx:#1d1b3a;--mut:#6b6990;--pri:#362d6e;--acc:#8a7fd8;--ok:#1f8a4c;--okb:#e2f5e9;--bad:#b3261e;--badb:#fde7e5;--bd:#e4e2f2;--sh:0 2px 10px rgba(54,45,110,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#12102a;--card:#1d1a3b;--tx:#eceaff;--mut:#a3a0cc;--pri:#9d93f0;--acc:#6c60c4;--ok:#6fdc9a;--okb:#17382a;--bad:#ff958c;--badb:#42201f;--bd:#312d5a;--sh:none}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding-bottom:84px}
+header{background:linear-gradient(135deg,#362d6e,#5a4bb0);padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 16px;color:#fff;position:sticky;top:0;z-index:5;border-radius:0 0 22px 22px;box-shadow:0 4px 18px rgba(54,45,110,.3)}
+.top{display:flex;align-items:center;gap:10px}.top img{height:38px;background:#fff;border-radius:10px;padding:3px}.top b{font-size:20px}.top small{opacity:.8;display:block;font-size:12px;margin-top:-2px}
+#q{width:100%;margin-top:12px;border:0;border-radius:14px;padding:13px 14px;font:inherit;background:rgba(255,255,255,.95);color:#1d1b3a;outline:none}
+main{max-width:720px;margin:0 auto;padding:14px 14px 0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:99px;font:inherit;font-size:14px;cursor:pointer}.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin:2px 2px 8px}
+.card{background:var(--card);border-radius:16px;box-shadow:var(--sh);border:1px solid var(--bd);padding:12px;margin-bottom:10px}
+.bk{display:flex;gap:12px;align-items:center;cursor:pointer;transition:transform .1s}.bk:active{transform:scale(.98)}
+.cv{flex:none;width:46px;height:64px;border-radius:6px 10px 10px 6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;box-shadow:inset 4px 0 0 rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.2);overflow:hidden}.cv img{width:100%;height:100%;object-fit:cover}
+.cv.big{width:96px;height:134px;font-size:30px}
+.bk .i{flex:1;min-width:0}.t{font-weight:650;line-height:1.25}.a{color:var(--mut);font-size:14px}
+.pill{flex:none;font-size:12px;font-weight:650;padding:4px 10px;border-radius:99px}.pill.ok{background:var(--okb);color:var(--ok)}.pill.no{background:var(--badb);color:var(--bad)}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font:inherit;font-weight:650;background:var(--pri);color:#fff;cursor:pointer;margin-top:8px;text-align:center;text-decoration:none}.btn.sec{background:transparent;color:var(--pri);border:1.5px solid var(--pri)}.btn.wa{background:#1fa855}.btn:disabled{opacity:.5}
+input.f{width:100%;border:1.5px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:12px;padding:13px;font:inherit;margin-top:8px;outline:none}input.f:focus{border-color:var(--acc)}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;padding:6px 6px calc(env(safe-area-inset-bottom,0px) + 6px);z-index:6}
+nav a{flex:1;text-align:center;color:var(--mut);font-size:12px;padding:6px;border-radius:12px;cursor:pointer;text-decoration:none}nav a span{display:block;font-size:22px}nav a.on{color:var(--pri);font-weight:650}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:12px 18px;border-radius:99px;opacity:0;transition:.25s;z-index:9;pointer-events:none;max-width:90%;text-align:center}#toast.show{opacity:1;transform:translateX(-50%)}
+.banner{background:#fff3cd;color:#664d03;padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:10px}
+h2{margin:6px 2px 10px;font-size:20px}.empty{text-align:center;color:var(--mut);padding:40px 10px}.late{color:var(--bad);font-weight:650}
+.labels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.lb{border:1px dashed #999;padding:6px;text-align:center;font-size:10px;break-inside:avoid;color:#000;background:#fff;min-height:128px}.lb svg{width:88px;height:88px}
+@media print{header,nav,.noprint,#toast{display:none}body{background:#fff;padding:0}main{max-width:none}}
+</style></head><body>
+<header><div class="top"><img src="logo.png" alt=""><div><b>Derech Library</b><small>Scan a book to take it out</small></div></div><input id="q" type="search" placeholder="Search title or author"></header>
+<main id="app"></main>
+<nav><a data-r="" ><span>📚</span>Books</a><a data-r="mine"><span>🔖</span>My books</a><a data-r="admin"><span>🛠</span>Admin</a></nav>
+<div id="toast"></div>
+<script src="books.js"></script><script src="config.js"></script>
+<script>
+const B=window.BOOKS,API=window.API_URL,$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DAY=864e5,fmt=t=>new Date(t).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+let tok=LS.get("tok",null);if(!tok){tok=Math.random().toString(36).slice(2)+Date.now().toString(36);LS.set("tok",tok)}
+let out=new Set(),mineL=[],cat="All",onlyAvail=false,adminPin="",adminData=null,busy=false;
+const cats=["All",...new Set(B.map(b=>b.c))];
+function toast(m){const t=$("toast");t.textContent=m;t.className="show";clearTimeout(toast.h);toast.h=setTimeout(()=>t.className="",2600)}
+async function api(p){
+ if(!API){const L=LS.get("demo",[]),b=p.book;
+  if(p.action==="status")return{out:L.map(x=>x.book)};
+  if(p.action==="mine")return{mine:L.filter(x=>x.token===p.token)};
+  if(p.action==="take"){L.push({book:b,title:p.title,name:p.name,phone:p.phone,token:p.token,out:Date.now(),due:Date.now()+7*DAY});LS.set("demo",L);return{ok:1}}
+  if(p.action==="return"||p.action==="adminreturn"){LS.set("demo",L.filter(x=>x.book!==b));return{ok:1}}
+  if(p.action==="extend"){const x=L.find(y=>y.book===b);if(x)x.due+=7*DAY;LS.set("demo",L);return{ok:1}}
+  if(p.action==="admin")return{loans:L}}
+ const r=await fetch(API+"?"+new URLSearchParams(p));return r.json()}
+async function refresh(){try{const[s,m]=await Promise.all([api({action:"status"}),api({action:"mine",token:tok})]);out=new Set(s.out||[]);mineL=m.mine||[];render()}catch(e){toast("Can't reach the library server")}}
+const col=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return`hsl(${h},42%,38%)`};
+const ini=t=>t.replace(/^(the|a|an)\s+/i,"").slice(0,2).toUpperCase();
+const cover=(b,big)=>`<div class="cv ${big?"big":""}" style="background:${col(b.t)}">${b.img?`<img src="${esc(b.img)}" alt="">`:ini(b.t)}</div>`;
+const pill=id=>out.has(id)?'<span class="pill no">Out</span>':'<span class="pill ok">Available</span>';
+function route(){return location.hash.slice(1)}
+function render(){const h=route(),a=$("app");document.querySelectorAll("nav a").forEach(x=>x.classList.toggle("on",x.dataset.r===(h==="mine"||h==="admin"?h:"")&&!h.startsWith("b-")||(h.startsWith("b-")&&x.dataset.r==="")));
+ $("q").parentElement.style.display=(h===""||h.startsWith("b-"))?"":"none";
+ const ban=API?"":'<div class="banner">Demo mode: nothing is shared yet. Finish the setup in the README.</div>';
+ if(h.startsWith("b-")){const b=B.find(x=>x.id===h);a.innerHTML=ban+(b?book(b):'<div class="empty">Book not found</div>')}
+ else if(h==="mine")a.innerHTML=ban+mine();
+ else if(h==="admin")a.innerHTML=admin();
+ else if(h==="labels")a.innerHTML=labels();
+ else a.innerHTML=ban+home()}
+function home(){const q=$("q").value.toLowerCase().trim();
+ const l=B.filter(b=>(cat==="All"||b.c===cat)&&(!onlyAvail||!out.has(b.id))&&(b.t+" "+b.a).toLowerCase().includes(q));
+ return`<div class="chips">${cats.map(c=>`<button class="chip ${c===cat?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}<button class="chip ${onlyAvail?"on":""}" id="av">✓ Available only</button></div>
+ <div class="meta"><span>${l.length} books</span><span>${out.size} out</span></div>`+
+ (l.map(b=>`<div class="card bk" data-b="${b.id}">${cover(b)}<div class="i"><div class="t">${esc(b.t)}</div><div class="a">${esc(b.a)||"&nbsp;"}</div></div>${pill(b.id)}</div>`).join("")||'<div class="empty">No books match</div>')}
+function book(b){const mine=mineL.find(x=>x.book===b.id),o=out.has(b.id),me=LS.get("me",{name:"",phone:""});
+ return`<div class="card" style="display:flex;gap:16px;align-items:center">${cover(b,1)}<div><div class="t" style="font-size:20px">${esc(b.t)}</div><div class="a">${esc(b.a)}</div><div class="a">${esc(b.c)}</div><div style="margin-top:8px">${pill(b.id)}</div></div></div>
+ ${b.syn?`<div class="card">${esc(b.syn)}</div>`:""}
+ ${mine?`<div class="card">You have this book.<br><b class="${mine.due<Date.now()?"late":""}">Due ${fmt(mine.due)}</b></div><button class="btn" data-do="return">↩ Return this book</button><button class="btn sec" data-do="extend">+1 week</button>`
+ :o?`<div class="card a">Someone has this book right now. Check back soon!</div>`
+ :`<div class="card"><b>Take it out for 7 days</b><input class="f" id="nm" placeholder="Your name" value="${esc(me.name)}" autocomplete="name"><input class="f" id="ph" type="tel" placeholder="WhatsApp number" value="${esc(me.phone)}" autocomplete="tel"><button class="btn" data-do="take">📖 Take out</button></div>`}
+ <a class="btn sec" href="#">← All books</a>`}
+function mine(){return`<h2>My books</h2>`+(mineL.length?mineL.map(m=>{const b=B.find(x=>x.id===m.book)||{t:m.book,a:"",id:m.book};return`<div class="card bk" data-b="${b.id}">${cover(b)}<div class="i"><div class="t">${esc(b.t)}</div><div class="a ${m.due<Date.now()?"late":""}">${m.due<Date.now()?"Overdue, was due ":"Due "}${fmt(m.due)}</div></div></div>`}).join(""):'<div class="empty">You have no books out 🎉</div>')}
+function waLink(l){let p=String(l.phone||"").replace(/\D/g,"");if(p.startsWith("0"))p="972"+p.slice(1);if(!p)return"";return"https://wa.me/"+p+"?text="+encodeURIComponent(`Hi ${l.name}, a friendly reminder from the Derech library: "${l.title}" is due back ${fmt(l.due)}. Thanks!`)}
+function admin(){if(!adminData)return`<h2>Admin</h2><div class="card"><input class="f" id="pin" type="password" inputmode="numeric" placeholder="Admin PIN"><button class="btn" data-do="login">Open</button></div>`;
+ const L=[...adminData].sort((a,b)=>a.due-b.due),od=L.filter(l=>l.due<Date.now()).length;
+ return`<h2>Checked out (${L.length}${od?`, <span class="late">${od} overdue</span>`:""})</h2>`+(L.map(l=>{const w=waLink(l);return`<div class="card"><div class="t">${esc(l.title)}</div><div>${esc(l.name)} · ${esc(l.phone||"no phone")}</div><div class="a ${l.due<Date.now()?"late":""}">${l.due<Date.now()?"OVERDUE · ":""}due ${fmt(l.due)}</div>${w?`<a class="btn wa" target="_blank" rel="noopener" href="${w}">💬 WhatsApp reminder</a>`:""}<button class="btn sec" data-ar="${esc(l.book)}">Mark returned</button></div>`}).join("")||'<div class="empty">Nothing is out</div>')+`<a class="btn" href="#labels">🏷 Print QR labels</a>`}
+const qr=u=>{const q=qrcode(0,"M");q.addData(u);q.make();return q.createSvgTag(3,0)};
+function labels(){const base=location.href.split("#")[0];return`<div class="noprint"><button class="btn" onclick="print()">🖨 Print / save as PDF</button><a class="btn sec" href="#admin">← Back</a></div><div class="labels"><div class="lb"><b>DERECH LIBRARY</b><br>Scan to take a book out${qr(base)}</div>`+B.map(b=>`<div class="lb">${qr(base+"#"+b.id)}<br>${esc(b.t)}<br>${b.id}</div>`).join("")+"</div>"}
+document.addEventListener("click",async e=>{const t=e.target.closest("[data-b],[data-c],#av,[data-do],[data-ar],nav a");if(!t)return;
+ if(t.dataset.b){location.hash=t.dataset.b;scrollTo(0,0)}
+ else if(t.dataset.c){cat=t.dataset.c;render()}
+ else if(t.id==="av"){onlyAvail=!onlyAvail;render()}
+ else if(t.matches("nav a")){location.hash=t.dataset.r;scrollTo(0,0)}
+ else if(t.dataset.ar){if(confirm("Mark returned?")){await api({action:"adminreturn",pin:adminPin,book:t.dataset.ar});await loadAdmin();refresh()}}
+ else if(t.dataset.do){if(busy)return;busy=true;t.disabled=true;try{await act(t.dataset.do)}catch(x){toast("Something went wrong, try again")}busy=false;render()}});
+async function loadAdmin(){const r=await api({action:"admin",pin:adminPin});if(r.error){adminData=null;toast(r.error)}else adminData=r.loans}
+async function act(d){const id=route();const b=B.find(x=>x.id===id);
+ if(d==="login"){adminPin=$("pin").value;await loadAdmin();return}
+ if(d==="take"){const name=$("nm").value.trim(),phone=$("ph").value.trim();if(!name)return toast("Please enter your name");
+  const r=await api({action:"take",book:id,title:b.t,name,phone,token:tok});if(r.error)return toast(r.error);LS.set("me",{name,phone});toast("Taken! Due in 7 days 📖");await refresh();location.hash="mine"}
+ if(d==="return"){const r=await api({action:"return",book:id,token:tok});if(r.error)return toast(r.error);toast("Returned. Thank you! ✅");await refresh();location.hash=""}
+ if(d==="extend"){const r=await api({action:"extend",book:id,token:tok});if(r.error)return toast(r.error);toast("Extended one week");await refresh()}}
+$("q").addEventListener("input",()=>{if(route()!==""&&!route().startsWith("b-"))return;if(route().startsWith("b-"))location.hash="";render();$("q").focus()});
+addEventListener("hashchange",()=>{if(route()==="admin"&&adminPin&&!adminData)loadAdmin().then(render);else if(route()==="admin"&&adminPin)loadAdmin().then(render);render()});
+render();refresh();setInterval(()=>{if(!busy&&document.visibilityState==="visible")refresh()},30000);
+</script></body></html>
