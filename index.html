@@ -108,6 +108,7 @@ function book(b){const mine=mineL.find(x=>x.book===b.id),o=out.has(b.id),me=LS.g
  return`<a class="back" href="#">← All books</a>
  <div class="hero">${cover(b,1)}<h1>${esc(b.t)}</h1>${b.a?`<div class="a">${esc(b.a)}</div>`:""}<div class="hm"><span class="cat">${esc(b.c)}</span>${pill(b.id)}</div></div>
  ${b.syn?`<div class="card"><div class="sh">About this book</div><p class="sy">${esc(b.syn)}</p></div>`:""}
+ ${adminData?`<div class="card"><div class="sh">Admin: cover</div><input class="f" id="ci" placeholder="Cover image link (https://…)" value="${esc(b.img||"")}"><button class="btn sec" data-do="autocover">🔍 Auto-find cover</button><button class="btn sec" data-do="gimg">🖼 Google Images</button><button class="btn" data-do="setcover">Save cover</button></div>`:""}
  ${mine?`<div class="card duebox ${late?"lt":""}"><div class="a">${late?"Overdue":"You have this book"}</div><div class="dd">${late?"Was due ":"Due "}${fmt(mine.due)}</div><div class="a">${late?"Please return it soon":dl<=1?"Due very soon":dl+" days left"}</div></div><button class="btn" data-do="return">↩ Return this book</button><button class="btn sec" data-do="extend">+1 week</button>`
  :o?`<div class="card a">Someone has this book right now. Check back soon!</div>`
  :`<div class="card"><div class="sh">Take it out for 7 days</div><input class="f" id="nm" placeholder="Your name" value="${esc(me.name)}" autocomplete="name"><input class="f" id="ph" type="tel" placeholder="WhatsApp number" value="${esc(me.phone)}" autocomplete="tel"><button class="btn" data-do="take">📖 Take out</button></div>`}`}
@@ -122,7 +123,7 @@ function admin(){if(!adminData)return`<h2>Admin</h2><div class="card"><input cla
  return(od?`<h2><span class="late">Overdue (${od})</span></h2>`+L.filter(l=>l.due<Date.now()).map(loanCard).join(""):"")+(L.length-od?`<h2>Out now (${L.length-od})</h2>`+L.filter(l=>l.due>=Date.now()).map(loanCard).join(""):"")+(L.length?"":'<div class="empty">Nothing is out</div>')+`<a class="btn" href="#labels">🏷 Print QR labels</a>
  <h2>Add a book</h2><div class="card"><input class="f" id="nt" placeholder="Title" value="${esc(nb.t)}"><input class="f" id="na" placeholder="Author (optional)" value="${esc(nb.a)}"><button class="btn sec" data-do="lookup">🔍 Look up details & cover</button>
  <input class="f" id="nc" list="cl" placeholder="Category" value="${esc(nb.c)}"><datalist id="cl">${cats.slice(1).map(c=>`<option value="${esc(c)}">`).join("")}</datalist>
- <textarea class="f" id="ns" rows="4" placeholder="Synopsis">${esc(nb.syn)}</textarea>${nb.img?`<div style="margin:6px 0"><img src="${esc(nb.img)}" alt="" style="height:90px;border-radius:6px"></div>`:""}${nb.warn?`<div class="late">⚠ Marked mature by Google Books. It will be saved hidden from students.</div>`:""}
+ <textarea class="f" id="ns" rows="4" placeholder="Synopsis">${esc(nb.syn)}</textarea><button class="btn sec" data-do="gimg">🖼 Find cover on Google Images</button><input class="f" id="ni" placeholder="Paste cover image link (https://…)" value="${esc(nb.img)}">${nb.img?`<div style="margin:6px 0"><img src="${esc(nb.img)}" alt="" style="height:90px;border-radius:6px"></div>`:""}${nb.warn?`<div class="late">⚠ Marked mature by Google Books. It will be saved hidden from students.</div>`:""}
  <button class="btn" data-do="addbook">➕ Save to library</button></div>`}
 const qr=u=>{const q=qrcode(0,"M");q.addData(u);q.make();return q.createSvgTag(3,0)};
 function labels(){const base=location.href.split("#")[0];return`<div class="noprint"><button class="btn" onclick="print()">🖨 Print / save as PDF</button><a class="btn sec" href="#admin">← Back</a></div><div class="labels"><div class="lb"><b>DERECH LIBRARY</b><br>Scan to take a book out${qr(base)}</div>`+B.map(b=>`<div class="lb">${qr(base+"#"+b.id)}<br>${esc(b.t)}<br>${b.id}</div>`).join("")+"</div>"}
@@ -135,13 +136,21 @@ document.addEventListener("click",async e=>{const t=e.target.closest("[data-b],[
  else if(t.dataset.ar){if(confirm("Mark returned?")){await api({action:"adminreturn",pin:adminPin,book:t.dataset.ar});await loadAdmin();refresh()}}
  else if(t.dataset.do){if(busy)return;busy=true;t.disabled=true;try{await act(t.dataset.do)}catch(x){toast("Something went wrong, try again")}busy=false;render()}});
 async function loadAdmin(){const r=await api({action:"admin",pin:adminPin});if(r.error){adminData=null;toast(r.error)}else adminData=r.loans}
-function readNb(){nb.t=$("nt").value.trim();nb.a=$("na").value.trim();nb.c=$("nc").value.trim();nb.syn=$("ns").value.trim()}
+async function findCover(t,a){try{const r=await(await fetch("https://openlibrary.org/search.json?limit=1&title="+encodeURIComponent(t)+(a?"&author="+encodeURIComponent(a):""))).json();const d=r.docs&&r.docs[0];if(d&&d.cover_i)return"https://covers.openlibrary.org/b/id/"+d.cover_i+"-M.jpg"}catch(e){}
+ try{const r=await(await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=1&q="+encodeURIComponent("intitle:"+t))).json();const v=r.items&&r.items[0]&&r.items[0].volumeInfo;if(v&&v.imageLinks)return(v.imageLinks.thumbnail||"").replace("http:","https:")}catch(e){}return""}
+function readNb(){nb.t=$("nt").value.trim();nb.a=$("na").value.trim();nb.c=$("nc").value.trim();nb.syn=$("ns").value.trim();if($("ni"))nb.img=$("ni").value.trim()}
 async function act(d){const id=route();
+ if(d==="gimg"){readNb();const t=route().startsWith("b-")&&b?b.t+" "+(b.a||""):nb.t+" "+nb.a;if(!t.trim())return toast("Enter a title first");open("https://www.google.com/search?tbm=isch&q="+encodeURIComponent(t+" book cover"),"_blank");return}
+ if(d==="autocover"){const u=await findCover(b.t,b.a);if(u){$("ci").value=u;toast("Found a cover. Tap Save cover.")}else toast("No cover found, try Google Images");return}
+ if(d==="setcover"){const u=$("ci").value.trim();if(u&&!/^https:\/\//.test(u))return toast("Link must start with https://");
+  const r=await api({action:"setcover",pin:adminPin,book:id,img:u});if(r.error)return toast(r.error);b.img=u;LS.set("books",B);toast("Cover saved");return}
  if(d==="lookup"){readNb();if(!nb.t)return toast("Enter a title first");
-  const q="intitle:"+nb.t+(nb.a?"+inauthor:"+nb.a:"");const r=await(await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=1&q="+encodeURIComponent(q).replace(/%2B/g,"+"))).json();
-  const v=r.items&&r.items[0]&&r.items[0].volumeInfo;if(!v)return toast("Nothing found, fill it in by hand");
-  nb.t=v.title||nb.t;if(!nb.a)nb.a=(v.authors||[]).join(", ");nb.syn=(v.description||nb.syn||"").replace(/<[^>]+>/g,"").slice(0,500);
-  nb.img=v.imageLinks?(v.imageLinks.thumbnail||"").replace("http:","https:"):"";nb.warn=v.maturityRating==="MATURE";if(!nb.c&&v.categories)nb.c=v.categories[0];toast("Found it. Check and save.");return}
+  const q="intitle:"+nb.t+(nb.a?"+inauthor:"+nb.a:"");let v=null;
+  try{const r=await(await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=1&q="+encodeURIComponent(q).replace(/%2B/g,"+"))).json();v=r.items&&r.items[0]&&r.items[0].volumeInfo}catch(e){}
+  if(v){nb.t=v.title||nb.t;if(!nb.a)nb.a=(v.authors||[]).join(", ");nb.syn=(v.description||nb.syn||"").replace(/<[^>]+>/g,"").slice(0,500);
+   nb.img=v.imageLinks?(v.imageLinks.thumbnail||"").replace("http:","https:"):"";nb.warn=v.maturityRating==="MATURE";if(!nb.c&&v.categories)nb.c=v.categories[0]}
+  if(!nb.img)nb.img=await findCover(nb.t,nb.a);
+  toast(v||nb.img?(nb.img?"Found it. Check and save.":"Found details, no cover. Try Google Images."):"Nothing found, fill it in by hand");return}
  if(d==="addbook"){readNb();if(!nb.t)return toast("Enter a title");
   const r=await api({action:"addbook",pin:adminPin,t:nb.t,a:nb.a,c:nb.c,syn:nb.syn,img:nb.img,status:nb.warn?"hidden":""});if(r.error)return toast(r.error);
   toast("Saved as "+r.id);nb={t:"",a:"",c:"",syn:"",img:""};await loadBooks();return}const b=B.find(x=>x.id===id);
@@ -151,6 +160,7 @@ async function act(d){const id=route();
  if(d==="return"){const r=await api({action:"return",book:id,token:tok});if(r.error)return toast(r.error);toast("Returned. Thank you! ✅");await refresh();location.hash=""}
  if(d==="extend"){const r=await api({action:"extend",book:id,token:tok});if(r.error)return toast(r.error);toast("Extended one week");await refresh()}}
 $("q").addEventListener("input",()=>{if(route()!==""&&!route().startsWith("b-"))return;if(route().startsWith("b-"))location.hash="";render();$("q").focus()});
+addEventListener("change",e=>{if(e.target.id==="ni"){readNb();render()}});
 addEventListener("hashchange",()=>{if(route()==="admin"&&adminPin&&!adminData)loadAdmin().then(render);else if(route()==="admin"&&adminPin)loadAdmin().then(render);render()});
 render();loadBooks();refresh();setInterval(()=>{if(!busy&&document.visibilityState==="visible")refresh()},30000);
 </script></body></html>
