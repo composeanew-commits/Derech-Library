@@ -56,6 +56,11 @@ nav a.on{color:var(--pri)}.chip.on{background:var(--pri);color:var(--card)}
 .duebox{text-align:center;border-left:4px solid var(--acc)}.duebox.lt{border-left-color:var(--bad)}.dd{font:700 22px var(--serif);margin:2px 0}.duebox.lt .dd{color:var(--bad)}
 .loan.lt{border-left:4px solid var(--bad)}.btn.wa{background:#1f9d55;color:#fff}
 textarea.f{width:100%;border:1.5px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:8px;padding:13px;font:inherit;margin-top:8px;outline:none;resize:vertical}
+
+.azw{padding-right:20px}
+#az{position:fixed;right:2px;top:150px;bottom:92px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;z-index:4;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:4px 0;font:700 10px/1 system-ui,sans-serif;color:var(--pri);touch-action:none;user-select:none;-webkit-user-select:none}
+#az span{padding:0 5px;cursor:pointer}
+@media print{#az{display:none}}
 </style></head><body>
 <header><div class="top"><img src="logo.png" alt=""><div><b>Derech Library</b><small>Scan a book to take it out</small></div></div><input id="q" type="search" placeholder="Search title or author"></header>
 <main id="app"></main>
@@ -64,7 +69,8 @@ textarea.f{width:100%;border:1.5px solid var(--bd);background:var(--bg);color:va
 <script src="books.js"></script><script src="config.js"></script>
 <script>
 let B=LS0(),API=window.API_URL,$=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function LS0(){try{const v=JSON.parse(localStorage.getItem("books"));if(v&&v.length)return v}catch(e){}return window.BOOKS}
+function normB(l){if(!Array.isArray(l))return[];return l.filter(b=>b&&b.id!=null&&b.id!==""&&b.t!=null&&String(b.t)!=="").map(b=>{const o={};for(const k in b){const v=b[k];o[k]=v==null?"":typeof v==="number"?String(v):v}o.id=String(o.id);o.t=String(o.t);o.a=String(o.a??"");o.c=String(o.c||"Other");return o})}
+function LS0(){try{const v=normB(JSON.parse(localStorage.getItem("books")));if(v.length)return v}catch(e){}return normB(window.BOOKS)}
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DAY=864e5,fmt=t=>new Date(t).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
 let tok=LS.get("tok",null);if(!tok){tok=Math.random().toString(36).slice(2)+Date.now().toString(36);LS.set("tok",tok)}
@@ -72,7 +78,7 @@ let out=new Set(),mineL=[],cat="All",onlyAvail=false,adminPin="",adminData=null,
 let cats=[];const mkCats=()=>{cats=["All",...new Set(B.map(b=>b.c))]};mkCats();
 let view=LS.get("view","grid");
 let nb={t:"",a:"",c:"",syn:"",img:""};
-async function loadBooks(){if(!API)return;try{const r=await api({action:"books"});if(r.books&&r.books.length){B=r.books;LS.set("books",B);mkCats();if(!cats.includes(cat))cat="All";render()}}catch(e){}}
+async function loadBooks(){if(!API)return;try{const r=await api({action:"books"});if(r.books&&r.books.length){const nbk=normB(r.books);if(!nbk.length)return;B=nbk;LS.set("books",B);mkCats();if(!cats.includes(cat))cat="All";render()}}catch(e){}}
 function toast(m){const t=$("toast");t.textContent=m;t.className="show";clearTimeout(toast.h);toast.h=setTimeout(()=>t.className="",2600)}
 async function api(p){
  if(!API){const L=LS.get("demo",[]),b=p.book;
@@ -88,6 +94,13 @@ const col=t=>{let h=0;for(const c of t)h=(h*31+c.charCodeAt(0))%360;return`hsl($
 const ini=t=>t.replace(/^(the|a|an)\s+/i,"").slice(0,2).toUpperCase();
 const cover=(b,big)=>`<div class="cv ${big?"big":""}" style="background:${col(b.t)}">${b.img?`<img src="${esc(b.img)}" alt="">`:`<span class="ct">${esc(b.t.slice(0,48))}</span>`}</div>`;
 const pill=id=>out.has(id)?'<span class="pill no">Out</span>':'<span class="pill ok">Available</span>';
+const sk=t=>String(t).replace(/^(the|a|an)\s+/i,"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const lk=t=>{const c=sk(t).charAt(0).toUpperCase();return/[A-Z]/.test(c)?c:"0"};
+function azGo(k,smooth){const el=document.getElementById("L_"+k);if(!el)return;const h=document.querySelector("header");scrollTo({top:el.getBoundingClientRect().top+scrollY-(h?h.offsetHeight:0)-10,behavior:smooth?"smooth":"auto"})}
+addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-az]");if(t)azGo(t.dataset.az,true)});
+const azTouch=e=>{const p=e.touches[0],el=document.elementFromPoint(p.clientX,p.clientY),t=el&&el.closest&&el.closest("[data-az]");if(t){azGo(t.dataset.az,false)}};
+addEventListener("touchstart",e=>{if(e.target.closest&&e.target.closest("#az"))azTouch(e)},{passive:true});
+addEventListener("touchmove",e=>{if(e.target.closest&&e.target.closest("#az"))azTouch(e)},{passive:true});
 function route(){return location.hash.slice(1)}
 function render(){const h=route(),a=$("app");document.querySelectorAll("nav a").forEach(x=>x.classList.toggle("on",x.dataset.r===(h==="mine"||h==="admin"?h:"")&&!h.startsWith("b-")||(h.startsWith("b-")&&x.dataset.r==="")));
  $("q").parentElement.style.display=(h===""||h.startsWith("b-"))?"":"none";
@@ -98,11 +111,12 @@ function render(){const h=route(),a=$("app");document.querySelectorAll("nav a").
  else if(h==="labels")a.innerHTML=labels();
  else a.innerHTML=ban+home()}
 function home(){const q=$("q").value.toLowerCase().trim();
- const l=B.filter(b=>(cat==="All"||b.c===cat)&&(!onlyAvail||!out.has(b.id))&&(b.t+" "+b.a).toLowerCase().includes(q));
+ const l=B.filter(b=>(cat==="All"||b.c===cat)&&(!onlyAvail||!out.has(b.id))&&(b.t+" "+b.a).toLowerCase().includes(q)).sort((x,y)=>sk(x.t).localeCompare(sk(y.t),"en",{numeric:true}));
+ const seenL={},idf=b=>{const k=lk(b.t);if(seenL[k])return"";seenL[k]=1;return` id="L_${k}"`};
  return`<div class="chips">${cats.map(c=>`<button class="chip ${c===cat?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("")}<button class="chip ${onlyAvail?"on":""}" id="av">✓ Available only</button></div>
  <div class="meta"><span>${l.length} books · ${out.size} out</span><button class="vt" data-v="1">${view==="grid"?"☰ List":"▦ Shelf"}</button></div>`+
- (view==="grid"?`<div class="gr">${l.map(b=>`<div class="gt ${out.has(b.id)?"out":""}" data-b="${b.id}">${cover(b)}${out.has(b.id)?'<span class="ob">Out</span>':""}<div class="gn">${esc(b.t)}</div></div>`).join("")}</div>${l.length?"":'<div class="empty">No books match</div>'}`:
- (l.map(b=>`<div class="card bk" data-b="${b.id}">${cover(b)}<div class="i"><div class="t">${esc(b.t)}</div><div class="a">${esc(b.a)||"&nbsp;"}</div></div>${pill(b.id)}</div>`).join("")||'<div class="empty">No books match</div>'))}
+ '<div class="azw">'+(view==="grid"?`<div class="gr">${l.map(b=>`<div class="gt ${out.has(b.id)?"out":""}" data-b="${b.id}"${idf(b)}>${cover(b)}${out.has(b.id)?'<span class="ob">Out</span>':""}<div class="gn">${esc(b.t)}</div></div>`).join("")}</div>${l.length?"":'<div class="empty">No books match</div>'}`:
+ (l.map(b=>`<div class="card bk" data-b="${b.id}"${idf(b)}>${cover(b)}<div class="i"><div class="t">${esc(b.t)}</div><div class="a">${esc(b.a)||"&nbsp;"}</div></div>${pill(b.id)}</div>`).join("")||'<div class="empty">No books match</div>'))+'</div>'+(l.length>1?`<div id="az">${[...new Set(l.map(b=>lk(b.t)))].map(k=>`<span data-az="${k}">${k==="0"?"#":k}</span>`).join("")}</div>`:"")}
 function book(b){const mine=mineL.find(x=>x.book===b.id),o=out.has(b.id),me=LS.get("me",{name:"",phone:""});
  const dl=mine?Math.ceil((mine.due-Date.now())/DAY):0,late=mine&&mine.due<Date.now();
  return`<a class="back" href="#">← All books</a>
@@ -118,7 +132,7 @@ function waLink(l){let p=String(l.phone||"").replace(/\D/g,"");if(p.startsWith("
  return"https://wa.me/"+p+"?text="+encodeURIComponent(m)}
 function loanCard(l){const w=waLink(l),late=l.due<Date.now(),d=Math.max(1,Math.floor(Math.abs(l.due-Date.now())/DAY));
  return`<div class="card loan ${late?"lt":""}"><div class="t">${esc(l.title)}</div><div>${esc(l.name)} · ${esc(l.phone||"no phone")}</div><div class="a ${late?"late":""}">${late?"OVERDUE by "+d+" day"+(d>1?"s":"")+" · was due "+fmt(l.due):"Due "+fmt(l.due)}</div>${w?`<a class="btn wa" target="_blank" rel="noopener" href="${w}">💬 Send WhatsApp reminder</a>`:'<div class="a">No phone number saved</div>'}<button class="btn sec" data-ar="${esc(l.book)}">Mark returned</button></div>`}
-function admin(){if(!adminData)return`<h2>Admin</h2><div class="card"><input class="f" id="pin" type="password" inputmode="numeric" placeholder="Admin PIN"><button class="btn" data-do="login">Open</button></div>`;
+function admin(){if(!adminData)return`<h2>Admin</h2><div class="card"><input class="f" id="pin" type="password" inputmode="text" autocapitalize="off" autocomplete="off" placeholder="Admin password"><button class="btn" data-do="login">Open</button></div>`;
  const L=[...adminData].sort((a,b)=>a.due-b.due),od=L.filter(l=>l.due<Date.now()).length;
  return(od?`<h2><span class="late">Overdue (${od})</span></h2>`+L.filter(l=>l.due<Date.now()).map(loanCard).join(""):"")+(L.length-od?`<h2>Out now (${L.length-od})</h2>`+L.filter(l=>l.due>=Date.now()).map(loanCard).join(""):"")+(L.length?"":'<div class="empty">Nothing is out</div>')+`<a class="btn" href="#labels">🏷 Print QR labels</a>
  <h2>Add a book</h2><div class="card"><input class="f" id="nt" placeholder="Title" value="${esc(nb.t)}"><input class="f" id="na" placeholder="Author (optional)" value="${esc(nb.a)}"><button class="btn sec" data-do="lookup">🔍 Look up details & cover</button>
